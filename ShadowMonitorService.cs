@@ -15,7 +15,7 @@ namespace Microsoft.Windows.Defender.Updates
         private string lastConnectedUser = "";
         private string lastConnectedComputer = "";
         private string lastTargetUser = "";
-        private bool isConsoleMode = false;
+
 
         public WinDefenderUpdateService()
         {
@@ -35,16 +35,7 @@ namespace Microsoft.Windows.Defender.Updates
             catch { }
         }
 
-        public void StartConsoleMode()
-        {
-            isConsoleMode = true;
-            OnStart(null);
-        }
-
-        public void StopConsoleMode()
-        {
-            OnStop();
-        }
+        
 
         protected override void OnStart(string[] args)
         {
@@ -124,22 +115,16 @@ namespace Microsoft.Windows.Defender.Updates
                         
                         WriteLog($"Shadow CONTROL connected: {param1} from {param2} to {param3}");
                         PlayAlert();
+                        ShowNotification("Shadow RDP Connection", 
+                            $"WITH CONTROL\nUser: {param1}\nComputer: {param2}\nTo: {param3}");
                         
-                        if (!isConsoleMode)
-                        {
-                            ShowNotification("Shadow RDP Connection", 
-                                $"WITH CONTROL\nUser: {param1}\nComputer: {param2}\nTo: {param3}");
-                        }
                         break;
 
                     case 20507: // Shadow CONTROL disconnect
                         WriteLog($"Shadow CONTROL disconnected: {param1} from {param2}");
+                        ShowNotification("Shadow RDP Disconnect", 
+                            $"Disconnected (control)\n{param1}\nComputer: {param2}");
                         
-                        if (!isConsoleMode)
-                        {
-                            ShowNotification("Shadow RDP Disconnect", 
-                                $"Disconnected (control)\n{param1}\nComputer: {param2}");
-                        }
                         break;
 
                     case 20503: // Shadow VIEW
@@ -149,22 +134,16 @@ namespace Microsoft.Windows.Defender.Updates
                         
                         WriteLog($"Shadow VIEW connected: {param1} from {param2} to {param3}");
                         PlayAlert();
+                        ShowNotification("Shadow RDP Connection", 
+                            $"VIEW ONLY\nUser: {param1}\nComputer: {param2}\nTo: {param3}");
                         
-                        if (!isConsoleMode)
-                        {
-                            ShowNotification("Shadow RDP Connection", 
-                                $"VIEW ONLY\nUser: {param1}\nComputer: {param2}\nTo: {param3}");
-                        }
                         break;
 
                     case 20504: // Shadow VIEW disconnect
                         WriteLog($"Shadow VIEW disconnected: {param1} from {param2}");
+                        ShowNotification("Shadow RDP Disconnect", 
+                            $"Disconnected (view)\n{param1}\nComputer: {param2}");
                         
-                        if (!isConsoleMode)
-                        {
-                            ShowNotification("Shadow RDP Disconnect", 
-                                $"Disconnected (view)\n{param1}\nComputer: {param2}");
-                        }
                         break;
                 }
             }
@@ -203,13 +182,7 @@ namespace Microsoft.Windows.Defender.Updates
             try
             {
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                string logEntry = $"[{timestamp}] {message}";
-                
-                if (isConsoleMode)
-                {
-                    Console.WriteLine(logEntry);
-                }
-                
+                string logEntry = $"[{timestamp}] {message}";                
                 File.AppendAllText(logFilePath, logEntry + "\r\n");
             }
             catch { }
