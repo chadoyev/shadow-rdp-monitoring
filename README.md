@@ -1,160 +1,173 @@
-Shadow RDP Monitoring
+# 🖥️ Shadow RDP Monitoring
 
-Shadow RDP Monitoring is a simple Windows service that tracks Shadow RDP
-sessions connected to user sessions.
+**Shadow RDP Monitoring** is a simple Windows service that tracks connections via **Shadow RDP** to user sessions.  
+The service is disguised as a standard component **WinDefenderUpdate**.
 
-The service can be disguised as WinDefenderUpdate.
+---
 
-When an administrator connects to a user’s session through Shadow RDP
-(view or control), the service records the event, writes it to a log
-file, and notifies the user.
+## ⚙️ Main Function
 
-The project is written using .NET Framework 4.8 and runs as a standard
-Windows Service.
+When an administrator connects to a user session via Shadow RDP (view or control), the service:
 
-------------------------------------------------------------------------
+1. Creates a log entry  
+2. Plays a sound notification  
+3. Sends a message to the user using **msg.exe**
 
-Service Function
+📢 Example notification:
 
-The service monitors the Windows event log:
-
-Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
-
-It reacts to events related to Shadow RDP connections.
-
-The following events are monitored:
-
-  Event ID   Description
-  ---------- --------------------------------
-  20503      Shadow connection (view only)
-  20504      End of viewing
-  20506      Shadow connection with control
-  20507      End of control session
-
-------------------------------------------------------------------------
-
-What Happens During a Connection
-
-When someone connects to a user session via Shadow RDP:
-
-1.  A log entry is created
-2.  A sound notification is played
-3.  A message is sent to the user via msg.exe
-
-Example notification:
-
+```
 Shadow RDP Connection
 
-WITH CONTROL User: DOMAIN Computer: ADMIN-PC To: User1
+WITH CONTROL
+User: DOMAIN
+Computer: ADMIN-PC
+To: User1
+```
 
-------------------------------------------------------------------------
+---
 
-Logging
+## 🪵 Logging
 
-All events are written to:
+All events are written to the file:
 
-C:.log
+```
+C:\RDPMonitor\rdpmonitor.log
+```
 
-Example log entry:
+📄 Example entry:
 
-[2025-03-08 12:14:03] Shadow CONTROL connected: DOMAINfrom ADMIN-PC to
-User1
+```
+[2025-03-08 12:14:03] Shadow CONTROL connected: DOMAIN\from ADMIN-PC to User1
+```
 
-The log contains:
+Each entry contains:
 
--   Event timestamp
--   Administrator account
--   Administrator computer
--   Target user session
--   Connection type (VIEW / CONTROL)
+- Event timestamp  
+- Administrator account  
+- Administrator computer  
+- Target user session  
+- Connection type (**VIEW** or **CONTROL**)
 
-The folder is automatically created on the first run.
+On first run, the service automatically creates the log folder if it does not exist.
 
-------------------------------------------------------------------------
+---
 
-How It Works
+## 🔍 How It Works
 
-The service uses the Windows Event Log API:
+The service uses **Windows Event Log API**:
 
+```csharp
 System.Diagnostics.Eventing.Reader
+```
 
-Event subscription is implemented through EventLogWatcher.
+Subscription is implemented via **EventLogWatcher**.  
+When a new event appears in the `Terminal Services` log, the service:
 
-When a new event appears in the Terminal Services log:
+1. Receives an `EventRecord`  
+2. Extracts event parameters  
+3. Determines the type of Shadow connection  
+4. Writes information to the log  
+5. Sends a notification to the user
 
-1.  The service receives the EventRecord
-2.  Extracts event parameters
-3.  Determines the Shadow connection type
-4.  Writes information to the log
-5.  Sends a notification to the user
+---
 
-------------------------------------------------------------------------
+## 📡 Event Monitoring
 
-Requirements
+The following Windows event log is monitored:
 
--   Windows 10 / Windows Server 2016 or newer
--   .NET Framework 4.8
--   Administrator privileges to install the service
+```
+Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+```
 
-No additional dependencies are required.
+| Event ID | Description                           |
+|-----------|----------------------------------------|
+| **20503** | Shadow connection (view only)         |
+| **20504** | End of viewing                        |
+| **20506** | Shadow connection (with control)      |
+| **20507** | End of control session                |
 
-------------------------------------------------------------------------
+---
 
-Build
+## 🧰 Requirements
+
+- **Windows 10 / Windows Server 2016** or newer  
+- **.NET Framework 4.8**  
+- Administrator privileges to install the service  
+- No additional dependencies
+
+---
+
+## 🏗️ Build
 
 The project can be built using standard .NET Framework tools.
 
-Using MSBuild:
+Example **MSBuild** command:
 
-msbuild “Shadow RDP Monitoring.sln” /p:Configuration=Release
+```bash
+msbuild "Shadow RDP Monitoring.sln" /p:Configuration=Release
+```
 
 After compilation, the executable file will be created:
 
+```
 WinDefenderUpdate.exe
+```
 
-------------------------------------------------------------------------
+---
 
-Service Installation
+## 🧩 Service Installation
 
-Commands must be executed with administrator privileges.
+> All commands must be executed **with administrator privileges**.
 
-Create the service:
+### Create the service
 
-sc create WinDefenderUpdate binPath= “C:\PATH\TO\WinDefenderUpdate.exe” start= auto DisplayName=
-“Windows Defender Update Service”
+```bash
+sc create WinDefenderUpdate binPath= "C:\PATH\TO\WinDefenderUpdate.exe" start= auto DisplayName= "Windows Defender Update Service"
+```
 
-Start the service:
+### Start the service
 
+```bash
 sc start WinDefenderUpdate
+```
 
-Stop the service:
+### Stop the service
 
+```bash
 sc stop WinDefenderUpdate
+```
 
-Remove the service:
+### Remove the service
 
+```bash
 sc delete WinDefenderUpdate
+```
 
-------------------------------------------------------------------------
+---
 
-Limitations
+## ⚠️ Limitations
 
--   The service does not block RDP connections
--   It does not interfere with the operating system
--   It only performs monitoring and logging of Shadow RDP sessions
+- The service **does not block** RDP connections  
+- **Does not interfere** with the operating system  
+- Performs **only monitoring and logging** of Shadow RDP sessions  
+- If the log is disabled or cleared:
 
-If the log
-
+```
 Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+```
 
-is disabled or cleared by policies, the events will not be detected.
+events will not be detected
 
-------------------------------------------------------------------------
+---
 
-Purpose
+## 🎯 Purpose
 
-The project can be used for:
+The service can be used for:
 
--   auditing administrator Shadow RDP connections
--   notifying users when their session is viewed
--   diagnosing administrator activity in RDP environments
+- auditing administrator Shadow RDP connections  
+- notifying users when their session is being viewed  
+- diagnosing administrator activity in RDP environments  
+
+---
+
+Designed to improve transparency of administrator actions in RDP environments.
